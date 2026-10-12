@@ -16,6 +16,7 @@
     - {type: percentage-tile, entity: sensor.zhimi_rmb1_6ab7_filter_life_level, name: Filter life, icon: 'mdi:air-filter', width: 100, ranges: [{to: 20, color: '#ea4335'}, {from: 20, to: 50, color: '#f9ab00'}, {from: 50, color: '#34a853'}]}
 - type: custom:material-purifier-card
   entity: fan.zhimi_rmb1_6ab7_air_purifier
+  show_name: false
   cadr: 360 # Xiaomi Air Purifier 4 Lite datasheet, m³/h.
   # calibration: written by Calibrate.
 - type: custom:material-purifier-card

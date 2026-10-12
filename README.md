@@ -14,16 +14,11 @@ Home Assistant theme fallbacks.
 [![Validate](https://github.com/lageorgem/ha-material-purifier-card/actions/workflows/validate.yml/badge.svg)](https://github.com/lageorgem/ha-material-purifier-card/actions/workflows/validate.yml)
 [![Tests](https://github.com/lageorgem/ha-material-purifier-card/actions/workflows/test.yml/badge.svg)](https://github.com/lageorgem/ha-material-purifier-card/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/lageorgem/ha-material-purifier-card/branch/master/graph/badge.svg)](https://codecov.io/gh/lageorgem/ha-material-purifier-card)
-[![License: MIT](https://img.shields.io/github/license/lageorgem/ha-material-purifier-card)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/lageorgem/ha-material-purifier-card/blob/master/LICENSE)
 
 [![Open your Home Assistant instance and open this repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=lageorgem&repository=ha-material-purifier-card&category=plugin)
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/hero-light.png">
-    <img src="assets/hero-dark.png" alt="Material Purifier Card with AQI halo, fan speed and filter tiles" width="380">
-  </picture>
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/hero-dark.png" alt="Material Purifier Card with AQI halo, fan speed and filter tiles" width="380">
 
 ## Table of contents
 
@@ -67,14 +62,11 @@ Home Assistant theme fallbacks.
 
 ## Gallery
 
-Five configurations with screenshots that follow your light or dark theme (dark by default). Copy the matching YAML below or use [showcase.yaml](examples/showcase.yaml), in the same order. Replace entity IDs with your own; Full needs **Calibrate** and **Set up tracking** in the editor (see [Vacuum filter reminder](#vacuum-filter-reminder) for the YAML alternative). Helper IDs are placeholders; use the IDs saved by your editor. Release history: [changelog](CHANGELOG.md).
+Five configurations with dark-theme screenshots. Copy the matching YAML below or use [showcase.yaml](https://github.com/lageorgem/ha-material-purifier-card/blob/master/examples/showcase.yaml), in the same order. Replace entity IDs with your own; Full needs **Calibrate** and **Set up tracking** in the editor (see [Vacuum filter reminder](#vacuum-filter-reminder) for the YAML alternative). Helper IDs are placeholders; use the IDs saved by your editor. Release history: [changelog](https://github.com/lageorgem/ha-material-purifier-card/blob/master/CHANGELOG.md).
 
 ### Full
 
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset="assets/showcase-full-light.png">
-  <img src="assets/showcase-full-dark.png" alt="Full purifier card configuration" width="260">
-</picture>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/showcase-full-dark.png" alt="Full purifier card configuration" width="260">
 
 <details>
 <summary>Full configuration</summary>
@@ -102,10 +94,7 @@ features:
 
 Hide the title and move the dial up with `show_name: false`.
 
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset="assets/showcase-minimal-light.png">
-  <img src="assets/showcase-minimal-dark.png" alt="Minimal purifier card configuration" width="260">
-</picture>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/showcase-minimal-dark.png" alt="Minimal purifier card configuration" width="260">
 
 <details>
 <summary>Minimal configuration</summary>
@@ -113,6 +102,7 @@ Hide the title and move the dial up with `show_name: false`.
 ```yaml
 type: custom:material-purifier-card
 entity: fan.zhimi_rmb1_6ab7_air_purifier
+show_name: false
 cadr: 360 # Xiaomi Air Purifier 4 Lite datasheet, m³/h.
 # calibration: written by Calibrate.
 ```
@@ -123,10 +113,7 @@ cadr: 360 # Xiaomi Air Purifier 4 Lite datasheet, m³/h.
 
 Tap the unit label to switch between Chinese AQI and µg/m³; choose presets from a dropdown.
 
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset="assets/showcase-cn-light.png">
-  <img src="assets/showcase-cn-dark.png" alt="China AQI purifier card configuration" width="260">
-</picture>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/showcase-cn-dark.png" alt="China AQI purifier card configuration" width="260">
 
 <details>
 <summary>China AQI configuration</summary>
@@ -148,10 +135,7 @@ features:
 
 ### Tiles showcase
 
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset="assets/showcase-tiles-light.png">
-  <img src="assets/showcase-tiles-dark.png" alt="Purifier card tiles showcase" width="260">
-</picture>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/showcase-tiles-dark.png" alt="Purifier card tiles showcase" width="260">
 
 <details>
 <summary>Tiles configuration</summary>
@@ -177,10 +161,7 @@ features:
 
 ### Compact
 
-<picture>
-  <source media="(prefers-color-scheme: light)" srcset="assets/showcase-compact-light.png">
-  <img src="assets/showcase-compact-dark.png" alt="Compact purifier card configuration" width="260">
-</picture>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/showcase-compact-dark.png" alt="Compact purifier card configuration" width="260">
 
 <details>
 <summary>Compact configuration</summary>
@@ -250,11 +231,11 @@ features:
 ```
 
 Replace entity IDs with your own. The wheel requires a fan with percentage support or an explicit `entity` on the `speed-wheel` feature; see [Fan speed](#fan-speed).
-The [full example](examples/card-full.yaml) includes extra controls and a resettable vacuum counter.
+The [full example](https://github.com/lageorgem/ha-material-purifier-card/blob/master/examples/card-full.yaml) includes extra controls and a resettable vacuum counter.
 
 ## Card options
 
-All options in the tables are optional unless marked **required**. Defaults apply when YAML keys are omitted. See the [changelog](CHANGELOG.md) for changes.
+All options in the tables are optional unless marked **required**. Defaults apply when YAML keys are omitted. See the [changelog](https://github.com/lageorgem/ha-material-purifier-card/blob/master/CHANGELOG.md) for changes.
 
 | Option | Type | Default / purpose |
 | --- | --- | --- |
@@ -322,12 +303,7 @@ These are **PM2.5-derived readings**, not a multi-pollutant AQI or a regulatory 
 
 With no `entity` on the `speed-wheel` feature, the card uses `fan.set_percentage` when supported. Otherwise, point that feature to a speed-setting `number.*` or `input_number.*`; the entity's min/max/step define the wheel range.
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/wheel-light.png">
-    <img src="assets/wheel-dark.png" alt="Scroll-wheel fan-speed control with percentage and room coverage" width="380">
-  </picture>
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/wheel-dark.png" alt="Scroll-wheel fan-speed control with percentage and room coverage" width="380">
 
 | Interaction | Behavior |
 | --- | --- |
@@ -434,12 +410,7 @@ Use preset names exactly as reported by your fan.
 
 Selects preset modes of the card's fan. Supports common selector options: `display`, `label`, `width`, `options`, `order`.
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/feature-fan-presets-light.png">
-    <img src="assets/feature-fan-presets-dark.png" alt="Fan presets on the purifier card" width="320">
-  </picture>
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/feature-fan-presets-dark.png" alt="Fan presets on the purifier card" width="320">
 
 | Option | Type | Default / purpose |
 | --- | --- | --- |
@@ -457,12 +428,7 @@ Selects preset modes of the card's fan. Supports common selector options: `displ
 
 Supports `label` and `width`, all [speed-wheel options](#speed-wheel-options), plus:
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/feature-speed-wheel-light.png">
-    <img src="assets/feature-speed-wheel-dark.png" alt="Speed wheel on the purifier card" width="320">
-  </picture>
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/feature-speed-wheel-dark.png" alt="Speed wheel on the purifier card" width="320">
 
 | Option | Type | Default / purpose |
 | --- | --- | --- |
@@ -480,12 +446,7 @@ Supports `label` and `width`, all [speed-wheel options](#speed-wheel-options), p
 
 Supports `label` and `width` plus:
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/feature-filter-vacuum-light.png">
-    <img src="assets/feature-filter-vacuum-dark.png" alt="Filter vacuum on the purifier card" width="320">
-  </picture>
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/feature-filter-vacuum-dark.png" alt="Filter vacuum on the purifier card" width="320">
 
 | Option | Type | Default / purpose |
 | --- | --- | --- |
@@ -511,12 +472,7 @@ Use **Set up tracking** in this feature's editor with an administrator account. 
 
 Supports common selector options: `display`, `label`, `width`, `options`, `order`.
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/feature-input-select-light.png">
-    <img src="assets/feature-input-select-dark.png" alt="Input select on the purifier card" width="320">
-  </picture>
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/feature-input-select-dark.png" alt="Input select on the purifier card" width="320">
 
 | Option | Type | Purpose |
 | --- | --- | --- |
@@ -538,12 +494,7 @@ Supports common selector options: `display`, `label`, `width`, `options`, `order
 A mutually exclusive selector: choosing a switch turns the others off, then the chosen one on.
 Supports `display`, `label`, `width`.
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/feature-switch-group-light.png">
-    <img src="assets/feature-switch-group-dark.png" alt="Switch group on the purifier card" width="320">
-  </picture>
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/feature-switch-group-dark.png" alt="Switch group on the purifier card" width="320">
 
 | Option | Type | Purpose |
 | --- | --- | --- |
@@ -562,12 +513,7 @@ Supports `display`, `label`, `width`.
 
 Independent switch controls. Supports `label`, `width`.
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/feature-switch-list-light.png">
-    <img src="assets/feature-switch-list-dark.png" alt="Switch list on the purifier card" width="320">
-  </picture>
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/feature-switch-list-dark.png" alt="Switch list on the purifier card" width="320">
 
 | Option | Type | Purpose |
 | --- | --- | --- |
@@ -585,12 +531,7 @@ Independent switch controls. Supports `label`, `width`.
 
 Action buttons. Supports `label`, `width`.
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/feature-button-list-light.png">
-    <img src="assets/feature-button-list-dark.png" alt="Button list on the purifier card" width="320">
-  </picture>
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/feature-button-list-dark.png" alt="Button list on the purifier card" width="320">
 
 | Option | Type | Purpose |
 | --- | --- | --- |
@@ -609,12 +550,7 @@ Uses `items`, not `entities`; buttons, scenes and scripts are pressed independen
 
 Read-only sensor rows with icon, title, and current value. Supports `label`, `width`.
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/feature-sensor-list-light.png">
-    <img src="assets/feature-sensor-list-dark.png" alt="Sensor list on the purifier card" width="320">
-  </picture>
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/feature-sensor-list-dark.png" alt="Sensor list on the purifier card" width="320">
 
 | Option | Type | Purpose |
 | --- | --- | --- |
@@ -630,12 +566,7 @@ Read-only sensor rows with icon, title, and current value. Supports `label`, `wi
 
 ### `entity-tile`
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/feature-entity-tile-light.png">
-    <img src="assets/feature-entity-tile-dark.png" alt="Entity tile on the purifier card" width="320">
-  </picture>
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/feature-entity-tile-dark.png" alt="Entity tile on the purifier card" width="320">
 
 | Option | Type | Default / purpose |
 | --- | --- | --- |
@@ -665,12 +596,7 @@ features:
 
 Shows a numeric state or attribute with a proportional background fill, such as remaining filter life or humidity.
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/feature-percentage-tile-light.png">
-    <img src="assets/feature-percentage-tile-dark.png" alt="Percentage tile on the purifier card" width="320">
-  </picture>
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/feature-percentage-tile-dark.png" alt="Percentage tile on the purifier card" width="320">
 
 | Option | Type | Default / purpose |
 | --- | --- | --- |
@@ -747,12 +673,7 @@ The **Vacuum filter** tile (YAML type `filter-vacuum`) tracks **estimated air pr
 
 The tile shows an estimated cleaning date. Tap its body for air-volume details. After cleaning, open the checkmark confirmation and choose **Mark vacuumed** to reset tracking. Cancel with the cross or Escape.
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/vacuum-confirm-light.png">
-    <img src="assets/vacuum-confirm-dark.png" alt="Vacuum filter reminder confirmation with Mark as vacuumed action" width="380">
-  </picture>
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/vacuum-confirm-dark.png" alt="Vacuum filter reminder confirmation with Mark as vacuumed action" width="380">
 
 To enable tracking, select your motor-speed sensor, enter datasheet **CADR**, and run **Calibrate** (or provide `max_rpm`). Then press **Set up tracking** in the filter-vacuum feature editor with an administrator account. It creates the two tracking helpers and saves `counter_entity` for you.
 
@@ -773,7 +694,7 @@ For reliable tracking, check that motor RPM drops to zero when the purifier is o
 <details>
 <summary>Prefer YAML for the tracking helpers?</summary>
 
-Use [purifier-vacuum-package.yaml](examples/purifier-vacuum-package.yaml) instead of **Set up tracking**, following the instructions in the file. It supplies an Integration helper that accumulates motor-speed readings and a resettable Utility Meter that counts usage since the last cleaning.
+Use [purifier-vacuum-package.yaml](https://github.com/lageorgem/ha-material-purifier-card/blob/master/examples/purifier-vacuum-package.yaml) instead of **Set up tracking**, following the instructions in the file. It supplies an Integration helper that accumulates motor-speed readings and a resettable Utility Meter that counts usage since the last cleaning.
 
 </details>
 
@@ -785,12 +706,7 @@ the dial. The same configuration works in **Masonry** and **Sections** views, us
 Feature widths are percentages of the **tile area**, not the whole card in wide layout.
 The tile area uses a **ten-column grid**; set `width` from **10–100%**, in steps of 10.
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="assets/wide-light.png">
-    <img src="assets/wide-dark.png" alt="Wide purifier card with a dial on the left and feature tiles on the right" width="720">
-  </picture>
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/wide-dark.png" alt="Wide purifier card with a dial on the left and feature tiles on the right" width="720">
 
 | Concept | Behavior |
 | --- | --- |
@@ -855,4 +771,4 @@ Developed and tested with a Xiaomi Smart Air Purifier 4 Lite using the Xiaomi Mi
 
 ## License
 
-[MIT](LICENSE). Release history: [CHANGELOG.md](CHANGELOG.md).
+[MIT](https://github.com/lageorgem/ha-material-purifier-card/blob/master/LICENSE). Release history: [CHANGELOG.md](https://github.com/lageorgem/ha-material-purifier-card/blob/master/CHANGELOG.md).

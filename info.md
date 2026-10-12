@@ -4,9 +4,7 @@ Material 3 Expressive air purifier controls for Home Assistant, designed to pair
 [Material Thermostat Card](https://github.com/lageorgem/ha-material-thermostat-card) and
 [Nerwyn's Material You theme](https://github.com/Nerwyn/material-you-theme).
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/hero-dark.png" alt="Material Purifier Card with AQI halo, speed wheel and filter tiles" width="380">
-</p>
+<img src="https://raw.githubusercontent.com/lageorgem/ha-material-purifier-card/master/assets/hero-dark.png" alt="Material Purifier Card with AQI halo, speed wheel and filter tiles" width="380">
 
 - Air-quality value and category, with an AirNow-colored halo; choose US or Chinese AQI, or PM2.5 in µg/m³.
 - Power and mode buttons, with mode, speed and RPM status when available.
