@@ -1,0 +1,131 @@
+import { fixture, html, expect } from '@open-wc/testing';
+import { captureEvents } from '../helpers';
+import '../../src/editors/display-toggle';
+import type { MpDisplayToggle } from '../../src/editors/display-toggle';
+
+/** Grab the two <button> elements rendered by the toggle. */
+function buttons(el: MpDisplayToggle): HTMLButtonElement[] {
+  return Array.from(el.shadowRoot!.querySelectorAll('button')) as HTMLButtonElement[];
+}
+
+describe('mp-display-toggle', () => {
+  it('renders three buttons and marks the one matching value with class "on"', async () => {
+    const el = await fixture<MpDisplayToggle>(
+      html`<mp-display-toggle .value=${'icons'}></mp-display-toggle>`
+    );
+    const [icons, dropdown, tile] = buttons(el);
+    expect(buttons(el).length).to.equal(3);
+    expect(icons.classList.contains('on')).to.be.true;
+    expect(dropdown.classList.contains('on')).to.be.false;
+    expect(tile.classList.contains('on')).to.be.false;
+  });
+
+  it('marks the dropdown button "on" when value is dropdown', async () => {
+    const el = await fixture<MpDisplayToggle>(
+      html`<mp-display-toggle .value=${'dropdown'}></mp-display-toggle>`
+    );
+    const [icons, dropdown, tile] = buttons(el);
+    expect(icons.classList.contains('on')).to.be.false;
+    expect(dropdown.classList.contains('on')).to.be.true;
+    expect(tile.classList.contains('on')).to.be.false;
+  });
+
+  it('marks the tile button "on" when value is tile', async () => {
+    const el = await fixture<MpDisplayToggle>(
+      html`<mp-display-toggle .value=${'tile'}></mp-display-toggle>`
+    );
+    const [icons, dropdown, tile] = buttons(el);
+    expect(icons.classList.contains('on')).to.be.false;
+    expect(dropdown.classList.contains('on')).to.be.false;
+    expect(tile.classList.contains('on')).to.be.true;
+  });
+
+  it('clicking Tile emits value-changed with "tile"', async () => {
+    const el = await fixture<MpDisplayToggle>(
+      html`<mp-display-toggle .value=${'icons'}></mp-display-toggle>`
+    );
+    const cap = captureEvents('value-changed');
+    buttons(el)[2].click(); // tile
+    cap.stop();
+    expect(cap.events.length).to.equal(1);
+    expect(cap.events[0].detail).to.deep.equal({ value: 'tile' });
+  });
+
+  it('defaults value to "icons"', async () => {
+    const el = await fixture<MpDisplayToggle>(html`<mp-display-toggle></mp-display-toggle>`);
+    expect(el.value).to.equal('icons');
+    expect(buttons(el)[0].classList.contains('on')).to.be.true;
+  });
+
+  it('clicking the OTHER value emits value-changed with that value', async () => {
+    const el = await fixture<MpDisplayToggle>(
+      html`<mp-display-toggle .value=${'icons'}></mp-display-toggle>`
+    );
+    const cap = captureEvents('value-changed');
+    buttons(el)[1].click(); // dropdown
+    cap.stop();
+    expect(cap.events.length).to.equal(1);
+    expect(cap.events[0].detail).to.deep.equal({ value: 'dropdown' });
+  });
+
+  it('clicking the OTHER value (icons from dropdown) emits value-changed', async () => {
+    const el = await fixture<MpDisplayToggle>(
+      html`<mp-display-toggle .value=${'dropdown'}></mp-display-toggle>`
+    );
+    const cap = captureEvents('value-changed');
+    buttons(el)[0].click(); // icons
+    cap.stop();
+    expect(cap.events.length).to.equal(1);
+    expect(cap.events[0].detail).to.deep.equal({ value: 'icons' });
+  });
+
+  it('clicking the CURRENT value emits nothing (early return)', async () => {
+    const el = await fixture<MpDisplayToggle>(
+      html`<mp-display-toggle .value=${'icons'}></mp-display-toggle>`
+    );
+    const cap = captureEvents('value-changed');
+    buttons(el)[0].click(); // icons (already current)
+    cap.stop();
+    expect(cap.events.length).to.equal(0);
+  });
+
+  it('clicking the current dropdown value emits nothing', async () => {
+    const el = await fixture<MpDisplayToggle>(
+      html`<mp-display-toggle .value=${'dropdown'}></mp-display-toggle>`
+    );
+    const cap = captureEvents('value-changed');
+    buttons(el)[1].click(); // dropdown (already current)
+    cap.stop();
+    expect(cap.events.length).to.equal(0);
+  });
+
+  describe('custom options', () => {
+    const ICON_TILE = [
+      { value: 'icon', label: 'Icon', icon: 'mdi:card-outline' },
+      { value: 'tile', label: 'Tile', icon: 'mdi:card-text-outline' },
+    ];
+
+    it('renders exactly the provided options and labels', async () => {
+      const el = await fixture<MpDisplayToggle>(
+        html`<mp-display-toggle .value=${'tile'} .options=${ICON_TILE}></mp-display-toggle>`
+      );
+      const bs = buttons(el);
+      expect(bs.length).to.equal(2);
+      expect(bs[0].textContent!.trim()).to.equal('Icon');
+      expect(bs[1].textContent!.trim()).to.equal('Tile');
+      expect(bs[1].classList.contains('on')).to.be.true;
+      expect(bs[0].classList.contains('on')).to.be.false;
+    });
+
+    it('emits the custom value on click', async () => {
+      const el = await fixture<MpDisplayToggle>(
+        html`<mp-display-toggle .value=${'tile'} .options=${ICON_TILE}></mp-display-toggle>`
+      );
+      const cap = captureEvents('value-changed');
+      buttons(el)[0].click(); // icon
+      cap.stop();
+      expect(cap.events.length).to.equal(1);
+      expect(cap.events[0].detail).to.deep.equal({ value: 'icon' });
+    });
+  });
+});

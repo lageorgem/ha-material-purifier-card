@@ -1,0 +1,266 @@
+import { LitElement, html, css, nothing, type TemplateResult } from 'lit';
+import { property } from 'lit/decorators.js';
+import type { HomeAssistant } from 'custom-card-helpers';
+import type { InputSelectFeatureConfig, OptionOverride } from '../types';
+import { prettyLabel, orderValues } from '../theme';
+import './display-toggle';
+import './width-field';
+import './icon-field';
+import './text-field';
+import './color-field';
+import './entity-picker';
+
+/**
+ * Editor for the `input_select` feature: entity picker, optional row label,
+ * icon/dropdown display, and per-option label/icon/hide overrides sourced from
+ * the selected entity's `options`.
+ */
+export class MpInputSelectEditor extends LitElement {
+  @property({ attribute: false }) hass!: HomeAssistant;
+  @property({ attribute: false }) feature!: InputSelectFeatureConfig;
+
+  /** Options exposed by the bound input_select entity. */
+  private _values(): string[] {
+    return this.hass?.states?.[this.feature.entity]?.attributes?.options ?? [];
+  }
+
+  /** The option values in their configured display order. */
+  private _orderedValues(): string[] {
+    return orderValues(this._values(), this.feature.order);
+  }
+
+  /**
+   * Reorder the options after a drag and persist the new order.
+   * @param e ha-sortable's item-moved event
+   */
+  private _moveOption(e: CustomEvent): void {
+    // Nested inside the editor's features ha-sortable — stop the composed,
+    // bubbling `item-moved` so it doesn't also reorder the outer feature.
+    e.stopPropagation();
+    const { oldIndex, newIndex } = e.detail;
+    const order = this._orderedValues();
+    const [moved] = order.splice(oldIndex, 1);
+    order.splice(newIndex, 0, moved);
+    this._emit({ order });
+  }
+
+  private _override(value: string): OptionOverride | undefined {
+    return this.feature.options?.find((o) => o.value === value);
+  }
+
+  /**
+   * Emit a patched feature config.
+   * @param patch partial feature to merge
+   */
+  private _emit(patch: Partial<InputSelectFeatureConfig>): void {
+    this.dispatchEvent(
+      new CustomEvent('feature-changed', {
+        detail: { feature: { ...this.feature, ...patch } },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  /**
+   * Apply (and prune) an override for one option value.
+   * @param value the option value
+   * @param patch the override fields
+   */
+  private _setOverride(value: string, patch: Partial<OptionOverride>): void {
+    const options = [...(this.feature.options ?? [])];
+    const idx = options.findIndex((o) => o.value === value);
+    const merged: OptionOverride = { ...(idx >= 0 ? options[idx] : { value }), ...patch };
+    if (merged.label === '') delete merged.label;
+    // `undefined` = unset (use the default icon); '' = explicit "no icon" (kept).
+    if (merged.icon === undefined) delete merged.icon;
+    if (!merged.hide) delete merged.hide;
+    // undefined/'' color = reset to the theme default.
+    if (!merged.color) delete merged.color;
+    const meaningful =
+      merged.label !== undefined || merged.icon !== undefined || !!merged.hide || !!merged.color;
+    if (idx >= 0) {
+      if (meaningful) options[idx] = merged;
+      else options.splice(idx, 1);
+    } else if (meaningful) {
+      options.push(merged);
+    }
+    this._emit({ options });
+  }
+
+  protected render(): TemplateResult {
+    const values = this._values();
+    const display = this.feature.display ?? 'icons';
+    return html`
+      <div class="editor">
+        <mp-entity-picker
+          .hass=${this.hass}
+          .value=${this.feature.entity ?? ''}
+          .includeDomains=${['input_select']}
+          label="Input select entity"
+          .allowCustom=${true}
+          @value-changed=${(e: CustomEvent) => this._emit({ entity: e.detail.value })}
+        ></mp-entity-picker>
+
+        <mp-text-field
+          label="Row label (optional)"
+          .value=${this.feature.label ?? ''}
+          @value-changed=${(e: CustomEvent) => this._emit({ label: e.detail.value || undefined })}
+        ></mp-text-field>
+
+        <div class="field">
+          <span class="field-label">Display</span>
+          <mp-display-toggle
+            .value=${display}
+            @value-changed=${(e: CustomEvent) => this._emit({ display: e.detail.value })}
+          ></mp-display-toggle>
+        </div>
+
+        <mp-width-field
+          .hass=${this.hass}
+          .value=${this.feature.width}
+          @width-changed=${(e: CustomEvent) => this._emit({ width: e.detail.value })}
+        ></mp-width-field>
+
+        ${
+          values.length === 0
+            ? html`<p class="hint">Pick an input_select entity to customize its options.</p>`
+            : html`<ha-sortable handle-selector=".handle" @item-moved=${this._moveOption}>
+                <div class="options">
+                  ${this._orderedValues().map((value) => {
+                    const ov = this._override(value);
+                    const hidden = !!ov?.hide;
+                    // Color is offered only in tile display (it tints the tile).
+                    const showColor = display === 'tile';
+                    return html`<div class="opt">
+                      <div class="handle"><ha-icon icon="mdi:drag"></ha-icon></div>
+                      <div class="opt-name" title=${value}>${prettyLabel(value)}</div>
+                      <div class="title-group">
+                        ${
+                          showColor
+                            ? html`<mp-color-field
+                                .value=${ov?.color}
+                                @value-changed=${(e: CustomEvent) =>
+                                  this._setOverride(value, { color: e.detail.value })}
+                              ></mp-color-field>`
+                            : nothing
+                        }
+                        <mp-text-field
+                          label=${prettyLabel(value)}
+                          .flatLeft=${showColor}
+                          .value=${ov?.label ?? ''}
+                          @value-changed=${(e: CustomEvent) =>
+                            this._setOverride(value, { label: e.detail.value })}
+                        ></mp-text-field>
+                      </div>
+                      <mp-icon-field
+                        .hass=${this.hass}
+                        .value=${ov?.icon}
+                        @value-changed=${(e: CustomEvent) =>
+                          this._setOverride(value, { icon: e.detail.value })}
+                      ></mp-icon-field>
+                      <button
+                        class="opt-hide ${hidden ? 'on' : ''}"
+                        title=${hidden ? 'Hidden' : 'Visible'}
+                        @click=${() => this._setOverride(value, { hide: !hidden })}
+                      >
+                        <ha-icon icon=${hidden ? 'mdi:eye-off' : 'mdi:eye'}></ha-icon>
+                      </button>
+                    </div>`;
+                  })}
+                </div>
+              </ha-sortable>`
+        }
+      </div>
+    `;
+  }
+
+  static styles = css`
+    .editor {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 4px 0;
+    }
+    mp-entity-picker {
+      display: block;
+      width: 100%;
+    }
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .field-label {
+      color: var(--secondary-text-color);
+      font-size: 14px;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .opt {
+      display: grid;
+      grid-template-columns: auto minmax(60px, 1fr) 2fr auto auto;
+      align-items: center;
+      gap: 8px;
+    }
+    .handle {
+      cursor: grab;
+      color: var(--secondary-text-color);
+      display: grid;
+      place-items: center;
+    }
+    .handle ha-icon {
+      --mdc-icon-size: 20px;
+    }
+    .opt-name {
+      font-size: 13px;
+      color: var(--secondary-text-color);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .title-group {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+    }
+    .title-group mp-text-field {
+      flex: 1;
+      min-width: 0;
+    }
+    mp-icon-field {
+      min-width: 0;
+    }
+    .opt-hide {
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: transparent;
+      border-radius: 50%;
+      color: var(--secondary-text-color);
+      cursor: pointer;
+    }
+    .opt-hide.on {
+      color: var(--error-color);
+    }
+    .hint {
+      color: var(--secondary-text-color);
+      font-size: 13px;
+      margin: 0;
+    }
+  `;
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'mp-input-select-editor': MpInputSelectEditor;
+  }
+}
+
+if (!customElements.get('mp-input-select-editor')) {
+  customElements.define('mp-input-select-editor', MpInputSelectEditor);
+}

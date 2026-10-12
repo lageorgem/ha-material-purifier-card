@@ -1,0 +1,54 @@
+# Dashboard cards, in gallery order. Replace entity IDs with your own.
+# Set up tracking creates the Full reminder helpers; IDs below are placeholders.
+- type: custom:material-purifier-card
+  entity: fan.zhimi_rmb1_6ab7_air_purifier
+  name: Air purifier
+  aqi: {entity: sensor.zhimi_rmb1_6ab7_pm25_density, metric: aqi, scale: us}
+  motor_speed_entity: sensor.zhimi_rmb1_6ab7_moto_speed_rpm
+  cadr: 360 # Xiaomi Air Purifier 4 Lite datasheet, m³/h.
+  # calibration: written by Calibrate.
+  features:
+    - {type: speed-wheel, entity: number.zhimi_rmb1_6ab7_favorite_level, width: 50}
+    # Placeholder IDs created by Set up tracking; use the IDs saved by your editor.
+    - {type: filter-vacuum, width: 50, counter_entity: sensor.xiaomi_smart_air_purifier_4_lite_runtime_since_vacuum, dust_level: medium}
+    - {type: entity-tile, entity: sensor.zhimi_rmb1_6ab7_temperature, name: Temperature, icon: 'mdi:home-thermometer', color: '#61b15d'}
+    - {type: entity-tile, entity: sensor.zhimi_rmb1_6ab7_relative_humidity, name: Humidity, icon: 'mdi:water-percent', color: '#5777f4'}
+    - {type: percentage-tile, entity: sensor.zhimi_rmb1_6ab7_filter_life_level, name: Filter life, icon: 'mdi:air-filter', width: 100, ranges: [{to: 20, color: '#ea4335'}, {from: 20, to: 50, color: '#f9ab00'}, {from: 50, color: '#34a853'}]}
+- type: custom:material-purifier-card
+  entity: fan.zhimi_rmb1_6ab7_air_purifier
+  cadr: 360 # Xiaomi Air Purifier 4 Lite datasheet, m³/h.
+  # calibration: written by Calibrate.
+- type: custom:material-purifier-card
+  entity: fan.zhimi_rmb1_6ab7_air_purifier
+  name: Bedroom air
+  aqi: {entity: sensor.zhimi_rmb1_6ab7_pm25_density, metric: aqi, scale: cn, allow_cycle: true}
+  motor_speed_entity: sensor.zhimi_rmb1_6ab7_moto_speed_rpm
+  cadr: 360 # Xiaomi Air Purifier 4 Lite datasheet, m³/h.
+  # calibration: written by Calibrate.
+  features:
+    - {type: fan-presets, display: dropdown, label: Mode}
+    - {type: speed-wheel, entity: number.zhimi_rmb1_6ab7_favorite_level, width: 100, label: Speed}
+- type: custom:material-purifier-card
+  entity: fan.zhimi_rmb1_6ab7_air_purifier
+  name: Purifier details
+  cadr: 360 # Xiaomi Air Purifier 4 Lite datasheet, m³/h.
+  # calibration: written by Calibrate.
+  aqi: {entity: sensor.zhimi_rmb1_6ab7_pm25_density, metric: pm25}
+  features:
+    - {type: percentage-tile, entity: sensor.zhimi_rmb1_6ab7_filter_life_level, name: Filter life, icon: 'mdi:air-filter', width: 50, ranges: [{to: 20, color: '#ea4335'}, {from: 20, to: 50, color: '#f9ab00'}, {from: 50, color: '#34a853'}]}
+    - {type: percentage-tile, entity: sensor.zhimi_rmb1_6ab7_relative_humidity, name: Humidity, icon: 'mdi:water-percent', width: 50, ranges: [{to: 30, color: '#f9ab00'}, {from: 30, to: 60, color: '#4285f4'}, {from: 60, color: '#a142f4'}]}
+    - {type: sensor-list, label: Readings, items: [{entity: sensor.zhimi_rmb1_6ab7_temperature, label: Temperature}, {entity: sensor.zhimi_rmb1_6ab7_filter_left_time, label: Filter left}, {entity: sensor.zhimi_rmb1_6ab7_moto_speed_rpm, label: Motor speed}]}
+    - {type: switch-list, label: Controls, entities: [{entity: switch.zhimi_rmb1_6ab7_physical_control_locked, label: Child lock, icon: 'mdi:lock'}, {entity: switch.zhimi_rmb1_6ab7_alarm, label: Sounds, icon: 'mdi:volume-high'}]}
+    - {type: input-select, entity: select.zhimi_rmb1_6ab7_brightness, label: Display brightness, display: tile}
+    - {type: entity-tile, entity: switch.zhimi_rmb1_6ab7_physical_control_locked, display: icon, icon: 'mdi:lock', width: 20}
+    - {type: entity-tile, entity: switch.zhimi_rmb1_6ab7_alarm, display: icon, icon: 'mdi:volume-high', width: 20}
+- type: custom:material-purifier-card
+  entity: fan.zhimi_rmb1_6ab7_air_purifier
+  name: Purifier
+  aqi: {entity: sensor.zhimi_rmb1_6ab7_pm25_density}
+  motor_speed_entity: sensor.zhimi_rmb1_6ab7_moto_speed_rpm
+  cadr: 360 # Xiaomi Air Purifier 4 Lite datasheet, m³/h.
+  # calibration: written by Calibrate.
+  features:
+    - {type: fan-presets, display: icons}
+    - {type: speed-wheel, entity: number.zhimi_rmb1_6ab7_favorite_level, display: level, width: 100}

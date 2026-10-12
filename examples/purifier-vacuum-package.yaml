@@ -1,0 +1,75 @@
+# Manual equivalent of the editor's Set up tracking button; do not install both.
+# Save as config/packages/purifier-vacuum-package.yaml.
+# Enable with homeassistant: packages: !include_dir_named packages
+# Replace the RPM source and confirm generated entity IDs after restarting HA.
+sensor:
+  - platform: integration
+    name: Xiaomi Smart Air Purifier 4 Lite motor runtime
+    unique_id: xiaomi_smart_air_purifier_4_lite_motor_runtime
+    source: sensor.zhimi_rmb1_6ab7_moto_speed_rpm
+    unit_time: h
+    method: left
+    round: 2
+    max_sub_interval: "00:05:00"
+
+# Motor RPM is a rate; Integration adds it up to rpm·h but cannot be reset.
+# The Utility Meter on top can: configure this sensor as the card's counter_entity.
+utility_meter:
+  xiaomi_smart_air_purifier_4_lite_runtime_since_vacuum:
+    name: Xiaomi Smart Air Purifier 4 Lite runtime since vacuum
+    source: sensor.xiaomi_smart_air_purifier_4_lite_motor_runtime
+    # No cycle: never reset on a schedule (equivalent to cycle: none in the UI).
+# After cleaning, Mark vacuumed calls utility_meter.reset to return this meter to 0.
+# Card ETA = remaining volume / daily volume, using counter / hours since last_reset
+# as the average rate since the last vacuum (including off periods), after 15 minutes.
+# Unknown or newer resets use hourly recorder statistics only as fallback.
+
+# OPTIONAL: remove this block unless you want a notification condition.
+# This binary sensor sends no notifications; use it in your own automation.
+# Fill in cadr (datasheet m³/h) and max_rpm (highest calibrated RPM or override).
+# Zero placeholders deliberately keep the sensor unavailable until configured.
+# Keep dust_level and thresholds aligned with your card's filter-vacuum feature.
+# Defaults (m³): low 250000, medium 125000, high 62500. Medium is approximately
+# two months for a 360 m³/h purifier running mostly in Auto at around 500 RPM.
+template:
+  - binary_sensor:
+      - name: Purifier filter needs vacuuming
+        unique_id: purifier_filter_needs_vacuuming
+        device_class: problem
+        availability: >-
+          {% set cadr = 0 %}
+          {% set max_rpm = 0 %}
+          {{ cadr > 0 and max_rpm > 0
+             and is_number(states('sensor.xiaomi_smart_air_purifier_4_lite_runtime_since_vacuum')) }}
+        state: >-
+          {% set cadr = 0 %}
+          {% set max_rpm = 0 %}
+          {% set dust_level = 'medium' %}
+          {% set thresholds = {'low': 250000, 'medium': 125000, 'high': 62500} %}
+          {% set counter = states('sensor.xiaomi_smart_air_purifier_4_lite_runtime_since_vacuum') | float(0) %}
+          {% set volume = counter * cadr / max_rpm if max_rpm > 0 else 0 %}
+          {{ volume >= thresholds[dust_level] }}
+
+# OPTIONAL: remove both blocks if you only use Mark vacuumed in the card.
+# Press this button only after vacuuming the pre-filter.
+input_button:
+  purifier_filter_vacuumed:
+    name: Purifier filter vacuumed
+    icon: mdi:vacuum
+
+automation:
+  - id: purifier_filter_vacuumed_reset_counter
+    alias: Purifier filter vacuumed - reset counter
+    trigger:
+      - platform: state
+        entity_id: input_button.purifier_filter_vacuumed
+    condition:
+      - condition: template
+        value_template: >-
+          {{ trigger.from_state is not none and trigger.to_state is not none
+             and trigger.to_state.state not in ['unknown', 'unavailable'] }}
+    action:
+      - service: utility_meter.reset
+        target:
+          entity_id: sensor.xiaomi_smart_air_purifier_4_lite_runtime_since_vacuum
+    mode: single

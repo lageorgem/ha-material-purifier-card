@@ -1,0 +1,67 @@
+# Dashboard card YAML, not a Home Assistant package.
+# Replace Xiaomi entity IDs with those exposed by your integration.
+# Set up tracking creates the reminder helpers; IDs below are placeholders.
+# Alternatively install purifier-vacuum-package.yaml and confirm its entity IDs.
+type: custom:material-purifier-card
+entity: fan.zhimi_rmb1_6ab7_air_purifier
+name: Living room purifier
+aqi:
+  entity: sensor.zhimi_rmb1_6ab7_pm25_density
+  source: pm25
+  metric: aqi
+  scale: us
+  allow_cycle: false # Set true to toggle AQI ↔ µg/m³ by tapping the label.
+  us_breakpoints: '2024'
+motor_speed_entity: sensor.zhimi_rmb1_6ab7_moto_speed_rpm
+cadr: 360 # Xiaomi Air Purifier 4 Lite datasheet, m³/h; not a card default.
+# calibration: written by Calibrate; max_rpm defaults to the highest calibrated rpm.
+features:
+  - type: fan-presets
+    display: tile
+    label: Mode
+    show_off: true
+    width: 100
+  - type: speed-wheel
+    entity: number.zhimi_rmb1_6ab7_favorite_level
+    estimate_auto: true # Calibration first, history learning as fallback in Auto/Sleep.
+    show_coverage: true # Needs CADR and calibrated RPM.
+    label: Fan speed
+    width: 50
+  - type: filter-vacuum
+    label: Vacuum pre-filter
+    counter_entity: sensor.xiaomi_smart_air_purifier_4_lite_runtime_since_vacuum
+    dust_level: medium
+    width: 50
+  - type: percentage-tile
+    entity: sensor.zhimi_rmb1_6ab7_filter_life_level
+    name: Filter life
+    icon: mdi:air-filter
+    ranges:
+      - to: 20
+        color: '#B3261E'
+      - from: 20
+        to: 50
+        color: '#FFB300'
+      - from: 50
+        color: '#2E7D32'
+    width: 50
+  - type: sensor-list
+    label: Air
+    items:
+      - entity: sensor.zhimi_rmb1_6ab7_temperature
+        label: Temperature
+        icon: mdi:thermometer
+      - entity: sensor.zhimi_rmb1_6ab7_relative_humidity
+        label: Humidity
+        icon: mdi:water-percent
+    width: 100
+  - type: switch-list
+    label: Device settings
+    entities:
+      - entity: switch.zhimi_rmb1_6ab7_child_lock
+        label: Child lock
+        icon: mdi:lock
+      - entity: switch.zhimi_rmb1_6ab7_alarm
+        label: Alarm
+        icon: mdi:volume-high
+    width: 100
