@@ -2,7 +2,7 @@ import { LitElement, html, css, nothing, type PropertyValues, type TemplateResul
 import { property } from 'lit/decorators.js';
 import type { HomeAssistant } from 'custom-card-helpers';
 import type { FeatureConfig, MaterialPurifierCardConfig } from '../types';
-import { MAX_WIDTH_PCT, TILE_DEFAULT_PCT, pctToSpan } from '../grid';
+import { featureWidthPct, pctToSpan } from '../grid';
 import './fan-presets';
 import './speed-wheel-tile';
 import './filter-vacuum';
@@ -29,11 +29,7 @@ export class MpFeatureRow extends LitElement {
    */
   protected willUpdate(changed: PropertyValues): void {
     if (!changed.has('feature') || !this.feature) return;
-    const tile = ['percentage-tile', 'entity-tile', 'speed-wheel', 'filter-vacuum'].includes(
-      this.feature.type
-    );
-    const width = this.feature.width ?? (tile ? TILE_DEFAULT_PCT : MAX_WIDTH_PCT);
-    this.style.gridColumn = `span ${pctToSpan(width)}`;
+    this.style.gridColumn = `span ${pctToSpan(featureWidthPct(this.feature))}`;
   }
 
   protected render(): TemplateResult | typeof nothing {

@@ -414,6 +414,13 @@ export class MpSpeedWheel extends LitElement {
         cursor: not-allowed;
       }
       .drum {
+        /* Animate the resolved color, not an unregistered custom property, so
+           the ends track the tile's background transition without observers. */
+        color: var(
+          --mp-wheel-fade,
+          var(--mp-surface-container-high, var(--ha-card-background, #fff))
+        );
+        transition: color 200ms cubic-bezier(0.2, 0, 0, 1);
         position: relative;
         width: 100%;
         height: 100%;
@@ -421,16 +428,21 @@ export class MpSpeedWheel extends LitElement {
         border-radius: var(--mp-wheel-radius);
         background: linear-gradient(
           to bottom,
-          color-mix(in srgb, var(--mp-surface-container-highest) 82%, black),
+          currentColor,
           var(--mp-surface-container-highest) 42%,
           color-mix(in srgb, var(--mp-surface-container-highest) 96%, white) 50%,
           var(--mp-surface-container-highest) 58%,
-          color-mix(in srgb, var(--mp-surface-container-highest) 82%, black)
+          currentColor
         );
         /* The gradient owns cylinder shading. Offset inset shadows paint a
            second capsule edge beside the outline; keep one fixed silhouette. */
         overflow: hidden;
         pointer-events: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .drum {
+          transition: none;
+        }
       }
       :host([interacting]) .drum {
         outline: var(--mp-wheel-outline) solid var(--mp-primary);

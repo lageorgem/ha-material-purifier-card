@@ -10,8 +10,7 @@ import {
   DIAL_MIN_PX,
   GRID_COLUMNS,
   MAX_WIDTH_PCT,
-  MIN_WIDTH_PCT,
-  TILE_DEFAULT_PCT,
+  featureWidthPct,
   WIDE_MIN_PX,
   WIDTH_STEP,
 } from './grid';
@@ -52,11 +51,12 @@ export class MaterialPurifierCard extends LitElement {
   }
 
   public getCardSize(): number {
-    return (
-      7 +
-      Math.ceil((this._config?.features?.length ?? 0) / 2) -
-      (this._config?.show_name === false ? 1 : 0)
-    );
+    return 7 + (this._config?.features?.length ?? 0) - (this._config?.show_name === false ? 1 : 0);
+  }
+
+  /** Sections uses actual content height, just as masonry does. */
+  public getGridOptions(): { columns: number; rows: 'auto'; min_columns: number } {
+    return { columns: 12, rows: 'auto', min_columns: 6 };
   }
 
   public static async getConfigElement(): Promise<HTMLElement> {
@@ -146,16 +146,7 @@ export class MaterialPurifierCard extends LitElement {
   }
 
   private _featureWidthPct(feature: FeatureConfig): number {
-    if (typeof feature.width === 'number' && feature.width > 0) {
-      return Math.max(
-        MIN_WIDTH_PCT,
-        Math.min(MAX_WIDTH_PCT, Math.round(feature.width / WIDTH_STEP) * WIDTH_STEP)
-      );
-    }
-    if (['percentage-tile', 'entity-tile', 'speed-wheel', 'filter-vacuum'].includes(feature.type)) {
-      return TILE_DEFAULT_PCT;
-    }
-    return MAX_WIDTH_PCT;
+    return featureWidthPct(feature);
   }
 
   private _layout(): {
@@ -371,6 +362,7 @@ export class MaterialPurifierCard extends LitElement {
         box-sizing: border-box;
         display: grid;
         align-content: flex-start;
+        align-items: start;
         gap: 12px;
         min-width: 0;
       }

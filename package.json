@@ -1,15 +1,28 @@
 {
   "name": "material-purifier-card",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Material 3 Expressive air purifier card with an animated AQI dial, a scroll-wheel fan speed knob and configurable tiles.",
   "type": "module",
-  "engines": {"node": ">=22"},
+  "engines": {
+    "node": ">=22"
+  },
   "main": "dist/material-purifier-card.js",
   "module": "dist/material-purifier-card.js",
   "license": "MIT",
   "author": "George Mihai",
-  "keywords": ["home-assistant", "lovelace", "custom-card", "purifier", "material-design", "material-you", "hacs"],
-  "repository": {"type": "git", "url": "https://github.com/lageorgem/ha-material-purifier-card"},
+  "keywords": [
+    "home-assistant",
+    "lovelace",
+    "custom-card",
+    "purifier",
+    "material-design",
+    "material-you",
+    "hacs"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lageorgem/ha-material-purifier-card"
+  },
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c --watch",

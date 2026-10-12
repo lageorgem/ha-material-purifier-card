@@ -33,6 +33,50 @@ describe('mp-speed-wheel', () => {
     element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
   }
 
+  it('fades both ends to the supplied color on light and dark surfaces', () => {
+    const drum = element.shadowRoot!.querySelector<HTMLElement>('.drum')!;
+    drum.style.transition = 'none';
+    for (const surface of ['#eeeeee', '#343438']) {
+      element.style.setProperty('--mp-surface-container-highest', surface);
+      element.style.setProperty('--mp-wheel-fade', '#c8bba4');
+      const gradient = getComputedStyle(drum).backgroundImage;
+      expect(gradient).to.match(/^linear-gradient\(rgb\(200, 187, 164\),/);
+      expect(gradient).to.match(/rgb\(200, 187, 164\)\)$/);
+      expect(drum.hasAttribute('light')).to.equal(false);
+    }
+  });
+
+  it('uses the inherited surface fallback without a wheel property update', () => {
+    const parent = element.parentElement!;
+    const originalStyle = parent.getAttribute('style');
+    try {
+      const drum = element.shadowRoot!.querySelector<HTMLElement>('.drum')!;
+      drum.style.transition = 'none';
+      for (const [surface, color] of [
+        ['#f2eadc', 'rgb(242, 234, 220)'],
+        ['#202020', 'rgb(32, 32, 32)'],
+      ]) {
+        parent.style.setProperty('--md-sys-color-surface-container-high', surface);
+        const gradient = getComputedStyle(drum).backgroundImage;
+        expect(gradient.startsWith(`linear-gradient(${color},`)).to.equal(true);
+        expect(gradient.endsWith(`${color})`)).to.equal(true);
+      }
+    } finally {
+      if (originalStyle === null) parent.removeAttribute('style');
+      else parent.setAttribute('style', originalStyle);
+    }
+  });
+
+  it('creates no theme MutationObserver or color-scheme subscription when connected', async () => {
+    const observer = sinon.spy(window, 'MutationObserver');
+    const media = sinon.spy(window, 'matchMedia');
+    element.remove();
+    document.body.append(element);
+    await element.updateComplete;
+    expect(observer.called).to.equal(false);
+    expect(media.called).to.equal(false);
+  });
+
   function wheel(deltaY: number, deltaMode = 1): WheelEvent {
     const event = new WheelEvent('wheel', { deltaY, deltaMode, cancelable: true });
     element.dispatchEvent(event);

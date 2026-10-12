@@ -40,6 +40,35 @@ describe('mp-purifier-dial', () => {
     expect(element.shadowRoot!.querySelector('.value')!.textContent).to.equal('—');
   });
 
+  for (const width of [224, 288, 320, 480, 640, 800, 1000, 1400]) {
+    it(`caps and centers the uncropped dial with controls outside its halo at ${width}px`, async () => {
+      const element = await dial();
+      element.style.width = `${width}px`;
+      element.modeAvailable = true;
+      await element.updateComplete;
+      const circle = element
+        .shadowRoot!.querySelector<HTMLElement>('.dial')!
+        .getBoundingClientRect();
+      const host = element.getBoundingClientRect();
+      expect(circle.width).to.be.closeTo(Math.min(width, 320), 1);
+      expect(circle.height).to.be.closeTo(circle.width, 1);
+      expect(circle.left + circle.width / 2).to.be.closeTo(host.left + host.width / 2, 1);
+      for (const selector of ['.power', '.mode']) {
+        const control = element
+          .shadowRoot!.querySelector<HTMLElement>(selector)!
+          .getBoundingClientRect();
+        const separation = Math.hypot(
+          control.left + control.width / 2 - circle.left - circle.width / 2,
+          control.top + control.height / 2 - circle.top - circle.height / 2
+        );
+        expect(separation - control.width / 2).to.be.at.least((circle.width * 134) / 320);
+        expect(control.left).to.be.at.least(circle.left);
+        expect(control.right).to.be.at.most(circle.right + 1);
+        expect(control.bottom).to.be.closeTo(circle.bottom, 1);
+      }
+    });
+  }
+
   it('cycles on click, Enter and Space with composed, bubbling empty-detail events', async () => {
     const element = await dial();
     element.allowCycle = true;

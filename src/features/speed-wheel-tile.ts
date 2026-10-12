@@ -615,12 +615,14 @@ export class MpSpeedWheelTile extends LitElement {
         container-type: inline-size;
       }
       .tile {
+        --mp-wheel-fade: var(--mp-surface-container);
         --mp-tile-radius: var(--mp-shape-chip-square);
         --mp-corner-base: 12px;
         --mp-edge-inline: 16px;
         --mp-corner-optical: 2px;
         --mp-gap-compact: 4px;
         --mp-edge-compact: 8px;
+        --mp-wheel-block-inset: 4px;
         /* Equal clearance from the corner arc, not just the straight edges. */
         --mp-corner-inset: max(
           var(--mp-corner-base),
@@ -641,7 +643,30 @@ export class MpSpeedWheelTile extends LitElement {
         cursor: default;
       }
       .tile.on {
+        --mp-wheel-fade: color-mix(
+          in srgb,
+          var(--mp-tile-accent, var(--mp-primary)) 16%,
+          var(--mp-surface-container)
+        );
         --mp-tile-radius: var(--mp-shape-card);
+      }
+      .tile:hover {
+        --mp-wheel-fade: color-mix(in srgb, var(--mp-on-surface) 6%, var(--mp-surface-container));
+      }
+      .tile:active {
+        --mp-wheel-fade: color-mix(in srgb, var(--mp-on-surface) 12%, var(--mp-surface-container));
+      }
+      .tile.on:hover {
+        --mp-wheel-fade: color-mix(
+          in srgb,
+          var(--mp-tile-accent, var(--mp-primary)) 22%,
+          var(--mp-surface-container)
+        );
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .tile {
+          transition: none;
+        }
       }
       .tile,
       .tile.on {
@@ -727,7 +752,8 @@ export class MpSpeedWheelTile extends LitElement {
         grid-column: 2;
         grid-row: 1 / 3;
         width: 56px;
-        height: 100%;
+        height: calc(100% - 2 * var(--mp-wheel-block-inset));
+        margin-block: var(--mp-wheel-block-inset);
         min-height: 112px;
         align-self: stretch;
       }

@@ -3,6 +3,14 @@
 All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.1] - 2026-10-12
+
+### Changed
+
+- Speed wheel: 4px of space above and below the drum, and its top/bottom fade now blends into the tile's own background in every theme and state.
+- Wide cards: half-width tiles keep their natural height instead of stretching to a taller neighbour; tile widths are interpreted consistently by the layout and the tiles; the card provides sensible default sizing in Sections views.
+- README: rewritten for users (device-agnostic), dark-first screenshots, a screenshot for every feature, and a layout section.
+
 ## [1.0.0] - 2026-10-12
 
 First public release.

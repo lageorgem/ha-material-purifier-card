@@ -167,7 +167,9 @@ describe('mp-feature-row', () => {
     await el.updateComplete;
     expect(el.style.gridColumn).to.equal('span 5');
     for (const [width, span] of [
-      [0, 1],
+      [0, 5],
+      [-10, 5],
+      [NaN, 5],
       [200, 10],
       [36, 4],
     ]) {

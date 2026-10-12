@@ -114,7 +114,7 @@ export interface FilterVacuumFeatureConfig {
   dust_level?: DustLevel;
   /** Optional input_select / select (low | medium | high) read when `dust_level` is unset. Read-only in the card. */
   dust_level_entity?: string;
-  /** m³ thresholds per dust level. Defaults: low 43200, medium 21600, high 10800. */
+  /** m³ thresholds per dust level. Defaults: low 250000, medium 125000, high 62500. */
   thresholds?: Partial<Record<DustLevel, number>>;
   icon?: string;
   color?: string;

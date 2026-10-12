@@ -1,4 +1,4 @@
-export const CARD_VERSION = '1.0.0';
+export const CARD_VERSION = '1.0.1';
 export const CARD_NAME = 'material-purifier-card';
 /** Lovelace card type (used as `custom:material-purifier-card`). */
 export const CARD_TYPE = CARD_NAME;

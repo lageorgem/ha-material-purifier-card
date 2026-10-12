@@ -73,6 +73,58 @@ describe('mp-speed-wheel-tile', () => {
       ],
     });
 
+  for (const [theme, background] of [
+    ['light', '#e9e1d3'],
+    ['dark', '#25232a'],
+  ]) {
+    it(`matches both gradient ends to the ${theme} tile in Manual, Auto and Off`, async () => {
+      tile.style.setProperty('--mp-surface-container', background);
+      tile.style.setProperty('--mp-surface-container-highest', background);
+      const drum = wheel().shadowRoot!.querySelector<HTMLElement>('.drum')!;
+      surface().style.transition = 'none';
+      drum.style.transition = 'none';
+      for (const accent of ['#123456', '#e25a91']) {
+        tile.config = { ...tile.config, color: accent };
+        for (const [preset, state] of [
+          ['Favorite', 'on'],
+          ['Auto', 'on'],
+          ['Favorite', 'off'],
+        ]) {
+          await reportPreset(preset, state);
+          await wheel().updateComplete;
+          // Rendering a new accent replaces the tile's inline style attribute.
+          surface().style.transition = 'none';
+          const color = getComputedStyle(surface()).backgroundColor;
+          const gradient = getComputedStyle(drum).backgroundImage;
+          expect(
+            gradient.startsWith(`linear-gradient(${color},`),
+            `${color}: ${gradient}`
+          ).to.equal(true);
+          expect(gradient.endsWith(`${color})`), `${color}: ${gradient}`).to.equal(true);
+        }
+      }
+    });
+  }
+
+  it('keeps the end color synchronized during on/off background transitions', async () => {
+    clock.restore();
+    tile.style.setProperty('--mp-surface-container', '#e9e1d3');
+    const drum = wheel().shadowRoot!.querySelector<HTMLElement>('.drum')!;
+    const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    // Settle the initial theme change before testing both directions.
+    for (let i = 0; i < 20; i++) await frame();
+    for (const state of ['on', 'off']) {
+      await reportPreset('Favorite', state);
+      for (let i = 0; i < 20; i++) {
+        await frame();
+        const color = getComputedStyle(surface()).backgroundColor;
+        const gradient = getComputedStyle(drum).backgroundImage;
+        expect(gradient.startsWith(`linear-gradient(${color},`), gradient).to.equal(true);
+        expect(gradient.endsWith(`${color})`), gradient).to.equal(true);
+      }
+    }
+  });
+
   const estimatedPreset = async (preset: string): Promise<void> => {
     tile.hass = {
       ...tile.hass,
@@ -530,6 +582,42 @@ describe('mp-speed-wheel-tile', () => {
     expect(drum.width).to.equal(56);
     expect(wheel().label).to.equal('Speed');
   });
+
+  for (const height of [136, 162]) {
+    it(`insets the drum by 4px at both ends without changing the ${height}px tile or text`, async () => {
+      tile.style.width = '140px';
+      tile.style.height = `${height}px`;
+      await wheel().updateComplete;
+      for (const state of ['on', 'off']) {
+        await reportPreset('Favorite', state);
+        const slot = surface();
+        const text = tile.shadowRoot!.querySelector('.text') as HTMLElement;
+        slot.style.setProperty('--mp-wheel-block-inset', '0px');
+        const beforeTile = slot.getBoundingClientRect();
+        const beforeDrum = wheel().getBoundingClientRect();
+        const beforeText = text.getBoundingClientRect();
+        slot.style.removeProperty('--mp-wheel-block-inset');
+        const afterTile = slot.getBoundingClientRect();
+        const afterDrum = wheel().getBoundingClientRect();
+        const afterText = text.getBoundingClientRect();
+        expect(afterDrum.top - afterTile.top).to.be.closeTo(
+          beforeDrum.top - beforeTile.top + 4,
+          0.5
+        );
+        expect(afterTile.bottom - afterDrum.bottom).to.be.closeTo(
+          beforeTile.bottom - beforeDrum.bottom + 4,
+          0.5
+        );
+        expect(afterDrum.height).to.be.closeTo(beforeDrum.height - 8, 0.5);
+        expect(afterDrum.width).to.equal(56);
+        expect(afterTile.height).to.equal(height);
+        expect(afterTile.height).to.equal(beforeTile.height);
+        for (const edge of ['top', 'bottom', 'left', 'right'] as const) {
+          expect(afterText[edge]).to.be.closeTo(beforeText[edge], 0.5);
+        }
+      }
+    });
+  }
 
   it('leaves the drum grid slot unpainted except for the wheel in every interaction state', async () => {
     tile.style.width = '140px';

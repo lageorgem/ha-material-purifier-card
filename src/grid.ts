@@ -21,6 +21,19 @@ export const WIDE_MIN_PX = 560; // card must be at least this wide to go side-by
 /** Horizontal padding of `ha-card` (12px 16px → 32px total), for width math. */
 export const CARD_PADDING_X = 32;
 
+/** Resolve widths once for both the layout decision and its feature spans. */
+export function featureWidthPct(feature: { type: string; width?: number }): number {
+  if (typeof feature.width === 'number' && feature.width > 0) {
+    return Math.max(
+      MIN_WIDTH_PCT,
+      Math.min(MAX_WIDTH_PCT, Math.round(feature.width / WIDTH_STEP) * WIDTH_STEP)
+    );
+  }
+  return ['percentage-tile', 'entity-tile', 'speed-wheel', 'filter-vacuum'].includes(feature.type)
+    ? TILE_DEFAULT_PCT
+    : MAX_WIDTH_PCT;
+}
+
 /**
  * Convert a width percentage to a column span in a {@link GRID_COLUMNS}-column row.
  * @param pct the width percentage (10–100)

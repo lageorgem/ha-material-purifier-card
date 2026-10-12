@@ -9,6 +9,7 @@ import { entityState, fanState, makeHass, type TestHass } from '../helpers';
 const ENTITY = 'fan.test';
 const PM25 = 'sensor.pm25';
 const RPM = 'sensor.rpm';
+const NativeResizeObserver = window.ResizeObserver;
 
 function config(overrides: Partial<MaterialPurifierCardConfig> = {}): MaterialPurifierCardConfig {
   return {
@@ -62,16 +63,20 @@ describe('material-purifier-card', () => {
     observed = undefined;
     sinon.stub(window, 'ResizeObserver').value(
       class implements ResizeObserver {
-        constructor(private callback: ResizeObserverCallback) {}
+        private native: ResizeObserver;
+        constructor(private callback: ResizeObserverCallback) {
+          this.native = new NativeResizeObserver(callback);
+        }
         observe(target: Element): void {
           if (target instanceof MaterialPurifierCard) {
             observed = target;
             resize = this.callback;
             observer = this;
-          }
+          } else this.native.observe(target);
         }
         unobserve(): void {}
         disconnect(): void {
+          this.native.disconnect();
           if (observer === this) disconnects++;
         }
       }
@@ -561,7 +566,7 @@ describe('material-purifier-card', () => {
       expect(row).to.have.property('parentOff', true);
     });
     expect(card.shadowRoot!.querySelector('.name')?.textContent).to.equal('Bedroom');
-    expect(card.getCardSize()).to.equal(8);
+    expect(card.getCardSize()).to.equal(9);
   });
 
   it('updates for AQI changes but skips unrelated entity changes', async () => {
@@ -711,6 +716,171 @@ describe('material-purifier-card', () => {
     const features = card.shadowRoot!.querySelector('.features') as HTMLElement;
     expect(features.style.flex).to.equal('0 0 50%');
     expect(features.style.gridTemplateColumns).to.match(/^repeat\(5, minmax\(0(px)?, 1fr\)\)$/);
+  });
+
+  it('exposes full-width, content-sized Sections defaults without limiting resizing', async () => {
+    const card = await mount();
+    expect(card.getGridOptions()).to.deep.equal({ columns: 12, rows: 'auto', min_columns: 6 });
+    card.setConfig(
+      config({ show_name: false, features: [{ type: 'speed-wheel' }, { type: 'filter-vacuum' }] })
+    );
+    await card.updateComplete;
+    expect(card.getCardSize()).to.equal(8);
+  });
+
+  for (const width of [320, 480, 640, 800, 1000, 1400]) {
+    for (const show_name of [true, false]) {
+      it(`contains and centers the full-circle dial and natural-height tiles at ${width}px (name ${show_name})`, async () => {
+        const card = await mount(
+          config({
+            show_name,
+            name: 'An exceptionally long purifier name '.repeat(8),
+            features: [{ type: 'speed-wheel' }, { type: 'filter-vacuum' }],
+          })
+        );
+        card.style.width = `${width}px`;
+        const surface = card.shadowRoot!.querySelector<HTMLElement>('ha-card')!;
+        surface.style.display = 'block';
+        resize([{ contentRect: { width } } as ResizeObserverEntry], observer);
+        await card.updateComplete;
+        const body = card.shadowRoot!.querySelector<HTMLElement>('.body')!;
+        const wrap = card.shadowRoot!.querySelector<HTMLElement>('.dial-wrap')!;
+        const features = card.shadowRoot!.querySelector<HTMLElement>('.features')!;
+        const rows = [...features.querySelectorAll('mp-feature-row')];
+        for (const row of rows) {
+          await row.updateComplete;
+          const child = row.shadowRoot!.firstElementChild!;
+          if ('updateComplete' in child) await child.updateComplete;
+        }
+        await dial(card).updateComplete;
+        // Dial/canvas observers remain real; wait for their layout delivery.
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        );
+        const wide = width >= 592;
+        expect(body.classList.contains('wide')).to.equal(wide);
+        const dialRect = dial(card).getBoundingClientRect();
+        const wrapRect = wrap.getBoundingClientRect();
+        const featureRect = features.getBoundingClientRect();
+        expect(dialRect.width).to.be.within(224, 320);
+        expect(dialRect.height).to.be.closeTo(dialRect.width, 1);
+        expect(dialRect.left + dialRect.width / 2).to.be.closeTo(
+          wrapRect.left + wrapRect.width / 2,
+          1
+        );
+        if (wide) {
+          expect(featureRect.left - wrapRect.right).to.be.closeTo(16, 1);
+          expect(featureRect.width).to.be.closeTo((width - 32) / 2, 1);
+        } else {
+          expect(featureRect.top - dialRect.bottom).to.be.closeTo(12, 1);
+          expect(rows[0].getBoundingClientRect().top).to.be.closeTo(
+            rows[1].getBoundingClientRect().top,
+            1
+          );
+        }
+        for (const element of [body, wrap, features, ...rows, surface]) {
+          expect(element.scrollWidth, element.tagName).to.be.at.most(element.clientWidth + 1);
+          expect(element.getBoundingClientRect().right).to.be.at.most(
+            card.getBoundingClientRect().right + 1
+          );
+        }
+        for (const row of rows) {
+          const tile =
+            row.shadowRoot!.firstElementChild!.shadowRoot!.querySelector<HTMLElement>('.tile')!;
+          expect(row.getBoundingClientRect().width).to.be.closeTo(
+            wide ? featureRect.width : (featureRect.width - 12) / 2,
+            1
+          );
+          expect(tile.getBoundingClientRect().height).to.be.lessThan(180);
+          expect(tile.scrollWidth).to.be.at.most(tile.clientWidth + 1);
+        }
+        expect(card.shadowRoot!.querySelector('.header') === null).to.equal(!show_name);
+      });
+    }
+  }
+
+  it('uses the thermostat thresholds and recomputes spans with the widest feature', async () => {
+    const card = await mount(
+      config({
+        features: [
+          { type: 'entity-tile', entity: PM25, width: 30 },
+          { type: 'entity-tile', entity: RPM, width: 60 },
+        ],
+      })
+    );
+    card.shadowRoot!.querySelector<HTMLElement>('ha-card')!.style.display = 'block';
+    for (const [width, wide] of [
+      [591, false],
+      [592, false],
+      [631, false],
+      [632, true],
+      [800, true],
+    ] as const) {
+      card.style.width = `${width}px`;
+      resize([{ contentRect: { width } } as ResizeObserverEntry], observer);
+      await card.updateComplete;
+      expect(card.shadowRoot!.querySelector('.body')!.classList.contains('wide')).to.equal(wide);
+      const features = card.shadowRoot!.querySelector<HTMLElement>('.features')!;
+      const rows = [...features.querySelectorAll('mp-feature-row')];
+      for (const row of rows) await row.updateComplete;
+      expect(rows.map((row) => row.style.gridColumn)).to.deep.equal(['span 3', 'span 6']);
+      expect(features.style.gridTemplateColumns).to.match(wide ? /^repeat\(6,/ : /^repeat\(10,/);
+      if (wide) {
+        const area = features.getBoundingClientRect().width;
+        expect(area).to.be.closeTo((width - 32) * 0.6, 1);
+        expect(rows[0].getBoundingClientRect().width).to.be.closeTo((area - 12) / 2, 1);
+        expect(rows[1].getBoundingClientRect().width).to.be.closeTo(area, 1);
+      }
+    }
+    card.setConfig(config({ features: [{ type: 'speed-wheel', width: 0 }] }));
+    await card.updateComplete;
+    const row = card.shadowRoot!.querySelector('mp-feature-row')!;
+    await row.updateComplete;
+    expect(row.style.gridColumn).to.equal('span 5');
+    for (const [width, wide] of [
+      [591, false],
+      [592, true],
+    ] as const) {
+      resize([{ contentRect: { width } } as ResizeObserverEntry], observer);
+      await card.updateComplete;
+      expect(card.shadowRoot!.querySelector('.body')!.classList.contains('wide')).to.equal(wide);
+    }
+  });
+
+  it('does not stretch a short tile to match a taller grid sibling', async () => {
+    const card = await mount(
+      config({ features: [{ type: 'entity-tile', entity: PM25 }, { type: 'filter-vacuum' }] })
+    );
+    card.style.width = '480px';
+    card.shadowRoot!.querySelector<HTMLElement>('ha-card')!.style.display = 'block';
+    resize([{ contentRect: { width: 480 } } as ResizeObserverEntry], observer);
+    await card.updateComplete;
+    const rows = [...card.shadowRoot!.querySelectorAll('mp-feature-row')];
+    for (const row of rows) await row.updateComplete;
+    rows[0].style.minHeight = '300px';
+    expect(rows[1].getBoundingClientRect().height).to.be.lessThan(180);
+  });
+
+  it('keeps empty and full-width feature configurations stacked at every target width', async () => {
+    const card = await mount();
+    const configurations = [
+      [],
+      [{ type: 'fan-presets' }],
+      [{ type: 'speed-wheel', width: 100 }],
+    ] satisfies NonNullable<MaterialPurifierCardConfig['features']>[];
+    for (const features of configurations) {
+      card.setConfig(config({ features }));
+      for (const width of [320, 480, 640, 800, 1000, 1400]) {
+        resize([{ contentRect: { width } } as ResizeObserverEntry], observer);
+        await card.updateComplete;
+        expect(card.shadowRoot!.querySelector('.body')!.classList.contains('stacked')).to.equal(
+          true
+        );
+        const area = card.shadowRoot!.querySelector<HTMLElement>('.features');
+        if (features.length) expect(area!.style.gridTemplateColumns).to.match(/^repeat\(10,/);
+        else expect(area).to.equal(null);
+      }
+    }
   });
 
   it('observes the host, switches layout on width changes, and reconnects cleanly', async () => {
