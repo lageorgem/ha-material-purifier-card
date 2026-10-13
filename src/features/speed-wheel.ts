@@ -5,6 +5,7 @@ import { WheelPhysics } from './wheel-physics';
 
 const PX_PER_DETENT = 22;
 const WHEEL_SETTLE_MS = 300;
+const POP_LINGER_MS = 400;
 const RIDGE_THICKNESS = 3;
 const RIDGE_MIN_THICKNESS = 0.6;
 const NOTCH_RADIUS = 2;
@@ -42,6 +43,9 @@ export class MpSpeedWheel extends LitElement {
   private _dirty = false;
   private _frame: number | null = null;
   private _wheelTimer: ReturnType<typeof setTimeout> | null = null;
+  private _popTimer: ReturnType<typeof setTimeout> | null = null;
+  private _hovered = false;
+  private _popActive = false;
   private _observer: ResizeObserver | null = null;
   private _ridges: SVGPathElement[] = [];
   private _radius = 60;
@@ -108,6 +112,10 @@ export class MpSpeedWheel extends LitElement {
     this.addEventListener('pointerup', this._onPointerEnd);
     this.addEventListener('pointercancel', this._onPointerEnd);
     this.addEventListener('lostpointercapture', this._onPointerEnd);
+    this.addEventListener('pointerenter', this._onPointerEnter);
+    this.addEventListener('pointerleave', this._onPointerLeave);
+    this.addEventListener('focus', this._syncPopped);
+    this.addEventListener('blur', this._syncPopped);
     this.updateComplete.then(() => {
       if (!this.isConnected || this._observer) return;
       this._observer = new ResizeObserver(this._layoutRidges);
@@ -117,7 +125,9 @@ export class MpSpeedWheel extends LitElement {
   }
 
   disconnectedCallback(): void {
+    this._hovered = false;
     this._cancelInteraction();
+    this.removeAttribute('popped');
     this._observer?.disconnect();
     this._observer = null;
     this.removeEventListener('keydown', this._onKeyDown);
@@ -127,6 +137,10 @@ export class MpSpeedWheel extends LitElement {
     this.removeEventListener('pointerup', this._onPointerEnd);
     this.removeEventListener('pointercancel', this._onPointerEnd);
     this.removeEventListener('lostpointercapture', this._onPointerEnd);
+    this.removeEventListener('pointerenter', this._onPointerEnter);
+    this.removeEventListener('pointerleave', this._onPointerLeave);
+    this.removeEventListener('focus', this._syncPopped);
+    this.removeEventListener('blur', this._syncPopped);
     super.disconnectedCallback();
   }
 
@@ -145,7 +159,37 @@ export class MpSpeedWheel extends LitElement {
     this._wheelTimer = null;
   }
 
+  private _syncPopped = (): void => {
+    const popped =
+      !this.disabled &&
+      (this._hovered ||
+        this.matches(':focus-visible') ||
+        this._popActive ||
+        this._interacting ||
+        this._popTimer !== null);
+    if (this.hasAttribute('popped') !== popped) this.toggleAttribute('popped', popped);
+  };
+
+  private _onPointerEnter = (event: PointerEvent): void => {
+    if (event.pointerType !== 'mouse' || !window.matchMedia('(hover: hover)').matches) return;
+    this._hovered = true;
+    this._syncPopped();
+  };
+
+  private _onPointerLeave = (event: PointerEvent): void => {
+    if (event.pointerType !== 'mouse') return;
+    this._hovered = false;
+    this._syncPopped();
+  };
+
+  private _clearPopTimer(): void {
+    if (this._popTimer !== null) clearTimeout(this._popTimer);
+    this._popTimer = null;
+  }
+
   private _cancelInteraction(): void {
+    this._popActive = false;
+    this._clearPopTimer();
     this._clearWheelTimer();
     if (this._frame !== null) cancelAnimationFrame(this._frame);
     this._frame = null;
@@ -179,6 +223,15 @@ export class MpSpeedWheel extends LitElement {
   private _settle(): void {
     this._paint();
     if (this._interacting) return;
+    // Linger after settlement without keeping the controlled input busy.
+    if (this._popActive) {
+      this._popActive = false;
+      this._clearPopTimer();
+      this._popTimer = setTimeout(() => {
+        this._popTimer = null;
+        this._syncPopped();
+      }, POP_LINGER_MS);
+    }
     if (this._dirty) {
       this._dirty = false;
       this._emit('value-changed');
@@ -204,6 +257,8 @@ export class MpSpeedWheel extends LitElement {
     if (this._frame !== null) cancelAnimationFrame(this._frame);
     this._frame = null;
     this._pointer = event.pointerId;
+    this._popActive = true;
+    this._clearPopTimer();
     this._startY = event.clientY;
     this._physics.dragStart(performance.now());
     this._startDetent = this._physics.detent;
@@ -272,17 +327,22 @@ export class MpSpeedWheel extends LitElement {
     if (!moved && !interacting) return;
     event.preventDefault();
     this._clearWheelTimer();
+    this._popActive = true;
     this._wheelTimer = setTimeout(() => {
       this._wheelTimer = null;
       if (this._pointer === null) this._animate();
       else this._paint();
     }, WHEEL_SETTLE_MS);
+    this._clearPopTimer();
     this._trackDetent();
   };
 
   private _onKeyDown = (event: KeyboardEvent): void => {
     if (this.disabled || this._pointer !== null || !KEYS.has(event.key)) return;
     event.preventDefault();
+    this._popActive = true;
+    this._clearPopTimer();
+    this._syncPopped();
     this._clearWheelTimer();
     if (this._frame !== null) cancelAnimationFrame(this._frame);
     this._frame = null;
@@ -356,6 +416,7 @@ export class MpSpeedWheel extends LitElement {
     if (this.hasAttribute('interacting') !== this._interacting) {
       this.toggleAttribute('interacting', this._interacting);
     }
+    this._syncPopped();
     const offset = (((-this._physics.position * 2) % 1) + 1) % 1;
     const center = Math.floor(this._ridges.length / 2);
     this._ridges.forEach((ridge, index) => {
@@ -400,6 +461,11 @@ export class MpSpeedWheel extends LitElement {
         --mp-wheel-min-height: 120px;
         --mp-wheel-radius: 28px;
         --mp-wheel-outline: 2px;
+        --mp-wheel-pop-scale: 1.08;
+        --mp-wheel-pop-enter: 220ms;
+        --mp-wheel-pop-exit: 300ms;
+        --mp-wheel-pop-easing: cubic-bezier(0.2, 0, 0, 1);
+        --mp-wheel-pop-shadow: 0 4px 8px 3px rgb(0 0 0 / 15%), 0 1px 3px rgb(0 0 0 / 30%);
         display: block;
         width: var(--mp-wheel-width);
         height: 100%;
@@ -408,6 +474,7 @@ export class MpSpeedWheel extends LitElement {
         user-select: none;
         outline: none;
         cursor: grab;
+        overflow: visible;
       }
       :host([disabled]) {
         opacity: 0.38;
@@ -420,7 +487,11 @@ export class MpSpeedWheel extends LitElement {
           --mp-wheel-fade,
           var(--mp-surface-container-high, var(--ha-card-background, #fff))
         );
-        transition: color 200ms cubic-bezier(0.2, 0, 0, 1);
+        transition:
+          color 200ms var(--mp-wheel-pop-easing),
+          transform var(--mp-wheel-pop-exit) var(--mp-wheel-pop-easing),
+          box-shadow var(--mp-wheel-pop-exit) var(--mp-wheel-pop-easing);
+        transform-origin: center;
         position: relative;
         width: 100%;
         height: 100%;
@@ -439,9 +510,24 @@ export class MpSpeedWheel extends LitElement {
         overflow: hidden;
         pointer-events: none;
       }
+      :host([popped]) .drum {
+        color: transparent;
+        background-color: var(--mp-surface-container-highest);
+        transform: scale(var(--mp-wheel-pop-scale));
+        box-shadow: var(--mp-wheel-pop-shadow);
+        transition-duration: var(--mp-wheel-pop-enter);
+      }
+      :host([popped]) .ridge-pool {
+        mask-image: none;
+      }
+      :host([popped]) .ridge:not([opacity='0']) {
+        opacity: 1;
+      }
       @media (prefers-reduced-motion: reduce) {
-        .drum {
+        .drum,
+        :host([popped]) .drum {
           transition: none;
+          transform: none;
         }
       }
       :host([interacting]) .drum {

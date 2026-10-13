@@ -630,6 +630,9 @@ describe('mp-speed-wheel-tile', () => {
       );
       expect(occupants).to.deep.equal([wheel()]);
       const style = getComputedStyle(wheel());
+      expect(getComputedStyle(tile).overflow).to.equal('visible');
+      expect(getComputedStyle(surface()).overflow).to.equal('visible');
+      expect(style.overflow).to.equal('visible');
       expect(style.backgroundColor).to.equal('rgba(0, 0, 0, 0)');
       expect(style.backgroundImage).to.equal('none');
       expect(style.boxShadow).to.equal('none');

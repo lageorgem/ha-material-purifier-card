@@ -1,6 +1,6 @@
 {
   "name": "material-purifier-card",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A Material 3 Expressive air purifier card with an animated AQI dial, a scroll-wheel fan speed knob and configurable tiles.",
   "type": "module",
   "engines": {

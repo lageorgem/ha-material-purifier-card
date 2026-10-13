@@ -245,6 +245,8 @@ describe('mp-speed-wheel', () => {
     element.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, clientY: 56 }));
     expect(changed).to.deep.equal([7]);
     expect(element.getAttribute('aria-valuenow')).to.equal('7');
+    expect(element.hasAttribute('popped')).to.equal(true);
+    clock.tick(400);
     expect(clock.countTimers()).to.equal(0);
   });
 
@@ -376,7 +378,7 @@ describe('mp-speed-wheel', () => {
     });
   }
 
-  it('keeps one unshadowed capsule box through idle, hover, keyboard focus, drag and coast', async () => {
+  it('lifts one shared capsule box through hover, keyboard focus, drag and coast', async () => {
     clock.restore();
     element.style.height = '162px';
     element.style.setProperty('--md-sys-color-surface-container-highest', '#343438');
@@ -384,15 +386,18 @@ describe('mp-speed-wheel', () => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
     );
     const drum = element.shadowRoot!.querySelector<HTMLElement>('.drum')!;
+    drum.style.transition = 'none';
     const initial = drum.getBoundingClientRect();
     const assertContained = () => {
       const bounds = drum.getBoundingClientRect();
       const style = getComputedStyle(drum);
-      expect(style.boxShadow).to.equal('none');
-      expect(style.transform).to.equal('none');
-      for (const edge of ['left', 'right', 'top', 'bottom'] as const) {
-        expect(bounds[edge], edge).to.be.closeTo(initial[edge], 0.5);
-      }
+      const popped = element.hasAttribute('popped');
+      expect(style.boxShadow === 'none').to.equal(!popped);
+      expect(style.boxShadow).not.to.include('inset');
+      const scale = popped && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 1.08 : 1;
+      expect(new DOMMatrix(style.transform).a).to.be.closeTo(scale, 0.001);
+      expect(bounds.width).to.be.closeTo(initial.width * scale, 0.5);
+      expect(bounds.height).to.be.closeTo(initial.height * scale, 0.5);
       for (const child of drum.querySelectorAll('*')) {
         const box = child.getBoundingClientRect();
         expect(box.left, child.tagName).to.be.at.least(bounds.left - 0.5);
@@ -404,6 +409,10 @@ describe('mp-speed-wheel', () => {
     assertContained();
     await sendMouse({ type: 'move', position: [initial.left + 28, initial.top + 60] });
     expect(element.matches(':hover')).to.equal(true);
+    expect(element.hasAttribute('popped')).to.equal(matchMedia('(hover: hover)').matches);
+    assertContained();
+    await sendMouse({ type: 'move', position: [initial.right + 100, initial.bottom + 100] });
+    expect(element.hasAttribute('popped')).to.equal(false);
     assertContained();
     const before = document.createElement('button');
     before.style.position = 'fixed';
@@ -412,8 +421,11 @@ describe('mp-speed-wheel', () => {
       before.focus();
       await sendKeys({ press: 'Tab' });
       expect(element.matches(':focus-visible')).to.equal(true);
+      expect(element.hasAttribute('popped')).to.equal(true);
       expect(getComputedStyle(drum).outlineWidth).to.equal('2px');
       assertContained();
+      element.blur();
+      expect(element.hasAttribute('popped')).to.equal(false);
       sinon.stub(element, 'setPointerCapture');
       pointer('pointerdown', 100);
       pointer('pointermove', 87);
@@ -425,6 +437,103 @@ describe('mp-speed-wheel', () => {
       assertContained();
     } finally {
       before.remove();
+    }
+  });
+
+  it('only pops hover-capable mouse pointers and removes all edge fading while lifted', () => {
+    const media = sinon.stub(window, 'matchMedia').returns({ matches: true } as MediaQueryList);
+    const drum = element.shadowRoot!.querySelector<HTMLElement>('.drum')!;
+    const pool = element.shadowRoot!.querySelector<SVGGElement>('.ridge-pool')!;
+    drum.style.transition = 'none';
+    element.style.setProperty('--mp-wheel-fade', '#c8bba4');
+    element.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'touch' }));
+    expect(element.hasAttribute('popped')).to.equal(false);
+    element.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+    expect(element.hasAttribute('popped')).to.equal(true);
+    const gradient = getComputedStyle(drum).backgroundImage;
+    expect(gradient).to.match(/^linear-gradient\(rgba\(0, 0, 0, 0\),/);
+    expect(gradient).to.match(/rgba\(0, 0, 0, 0\)\)$/);
+    expect(getComputedStyle(drum).backgroundColor).not.to.equal('rgba(0, 0, 0, 0)');
+    expect(getComputedStyle(pool).maskImage).to.equal('none');
+    for (const ridge of pool.querySelectorAll<SVGPathElement>('.ridge')) {
+      expect(getComputedStyle(ridge).opacity).to.equal(
+        ridge.getAttribute('opacity') === '0' ? '0' : '1'
+      );
+    }
+    element.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
+    expect(element.hasAttribute('popped')).to.equal(false);
+    expect(getComputedStyle(drum).boxShadow).to.equal('none');
+    expect(getComputedStyle(drum).transform).to.equal('none');
+    expect(getComputedStyle(drum).backgroundImage).to.include('rgb(200, 187, 164)');
+    expect(getComputedStyle(pool).maskImage).not.to.equal('none');
+    media.returns({ matches: false } as MediaQueryList);
+    element.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+    expect(element.hasAttribute('popped')).to.equal(false);
+  });
+
+  it('stays lifted through drag, coast, settlement and the 400ms linger without rendering', () => {
+    sinon.stub(element, 'setPointerCapture');
+    const update = sinon.spy(element, 'requestUpdate');
+    values('value-changed');
+    pointer('pointerdown', 100);
+    element.blur();
+    expect(element.hasAttribute('popped')).to.equal(true);
+    clock.tick(16);
+    pointer('pointermove', 56);
+    pointer('pointerup', 56);
+    expect(element.hasAttribute('popped')).to.equal(true);
+    let settled = false;
+    element.addEventListener('value-changed', () => {
+      settled = true;
+    });
+    for (let i = 0; i < 1000 && !settled; i++) clock.tick(16);
+    expect(settled).to.equal(true);
+    expect(element.hasAttribute('popped')).to.equal(true);
+    clock.tick(380);
+    expect(element.hasAttribute('popped')).to.equal(true);
+    clock.tick(20);
+    expect(element.hasAttribute('popped')).to.equal(false);
+    // The controlled-value echo requests one update; motion itself requests none.
+    expect(update.callCount).to.equal(1);
+  });
+
+  it('keeps wheel-scroll lifted until the settle window plus linger and clears on disconnect', () => {
+    wheel(-100);
+    expect(element.hasAttribute('popped')).to.equal(true);
+    clock.tick(699);
+    expect(element.hasAttribute('popped')).to.equal(true);
+    clock.tick(1);
+    expect(element.hasAttribute('popped')).to.equal(false);
+    wheel(-100);
+    clock.tick(300);
+    element.remove();
+    expect(element.hasAttribute('popped')).to.equal(false);
+    expect(clock.countTimers()).to.equal(0);
+  });
+
+  it('applies the reduced-motion static fallback while retaining lift and clear edges', () => {
+    const sheets = [...element.shadowRoot!.adoptedStyleSheets];
+    const reduced = sheets
+      .flatMap((sheet) => [...sheet.cssRules])
+      .find(
+        (rule): rule is CSSMediaRule =>
+          rule instanceof CSSMediaRule && rule.conditionText === '(prefers-reduced-motion: reduce)'
+      )!;
+    const original = reduced.media.mediaText;
+    try {
+      // Activate the actual media rule to verify its cascade without OS settings.
+      reduced.media.mediaText = 'all';
+      pointer('pointerdown', 100);
+      const drum = element.shadowRoot!.querySelector<HTMLElement>('.drum')!;
+      const style = getComputedStyle(drum);
+      expect(element.hasAttribute('popped')).to.equal(true);
+      expect(style.transform).to.equal('none');
+      expect(style.transitionDuration).to.equal('0s');
+      expect(style.boxShadow).not.to.equal('none');
+      expect(style.backgroundImage).to.include('rgba(0, 0, 0, 0)');
+    } finally {
+      reduced.media.mediaText = original;
+      pointer('pointercancel', 100);
     }
   });
 

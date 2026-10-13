@@ -613,6 +613,7 @@ export class MpSpeedWheelTile extends LitElement {
         min-width: 0;
         height: 100%;
         container-type: inline-size;
+        overflow: visible;
       }
       .tile {
         --mp-wheel-fade: var(--mp-surface-container);
@@ -641,6 +642,7 @@ export class MpSpeedWheelTile extends LitElement {
         height: 100%;
         padding: 0 var(--mp-edge-inline) 0 0;
         cursor: default;
+        overflow: visible;
       }
       .tile.on {
         --mp-wheel-fade: color-mix(
@@ -749,6 +751,7 @@ export class MpSpeedWheelTile extends LitElement {
         color: var(--mp-on-surface-variant);
       }
       mp-speed-wheel {
+        overflow: visible;
         grid-column: 2;
         grid-row: 1 / 3;
         width: 56px;
